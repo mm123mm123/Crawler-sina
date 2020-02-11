@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import org.apache.commons.lang3.StringUtils;
 
 public class Crawler {
@@ -29,8 +30,8 @@ public class Crawler {
                 continue;
             }
             if (filterLinksConditions(link)) {
-                if(link.startsWith("//")){
-                    link="https:"+link;
+                if (link.startsWith("//")) {
+                    link = "https:" + link;
                 }
                 System.out.println(link);
                 processedLinkPool.add(link);
@@ -63,8 +64,8 @@ public class Crawler {
     }
 
     private boolean filterLinksConditions(String link) {
-        String[] ignoreKeyWords={"passport","lives","so","game","games","mp","k","my","blog","dp","mail","{$this->pid}","javascript"};
-        String[] interestedKeyWords={"https://sina.cn/","https://edu.sina.cn/","https://finance.sina.cn/","https://emil.sina.cn/","https://tech.sina.cn/","https://nba.sina.cn/","https://auto.sina.cn/","https://edu.sina.cn/"};
-        return StringUtils.indexOfAny(link,ignoreKeyWords)==-1 && StringUtils.containsAny(link,interestedKeyWords) ;
+        String[] ignoreKeyWords = {"passport", "lives", "so", "game", "games", "mp", "k", "my", "blog", "dp", "mail", "{$this->pid}", "javascript"};
+        String[] interestedKeyWords = {"https://sina.cn/", "https://edu.sina.cn/", "https://finance.sina.cn/", "https://emil.sina.cn/", "https://tech.sina.cn/", "https://nba.sina.cn/", "https://auto.sina.cn/", "https://edu.sina.cn/"};
+        return StringUtils.indexOfAny(link, ignoreKeyWords) == -1 && StringUtils.containsAny(link, interestedKeyWords);
     }
 }
