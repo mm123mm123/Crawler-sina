@@ -83,4 +83,21 @@ public class Crawler {
         String[] interestedKeyWords = {"https://sina.cn/", "https://edu.sina.cn/", "https://finance.sina.cn/", "https://emil.sina.cn/", "https://tech.sina.cn/", "https://nba.sina.cn/", "https://edu.sina.cn/"};
         return StringUtils.containsAny(link, interestedKeyWords);
     }
+
+    private void prseHtml(String html, List<String> linkPool) {
+        Document doc = Jsoup.parse(html);
+        String title = doc.body().select("h1").text();
+        System.out.println(title);
+        ArrayList<Element> tags = doc.select("a");
+        for (Element taga : tags) {
+            String newlink = taga.attr("href");
+            linkPool.add(newlink);
+        }
+    }
+
+    private boolean filterLinksConditions(String link) {
+        String[] ignoreKeyWords = {"passport", "lives", "so", "game", "games", "mp", "k", "my", "blog", "dp", "mail", "{$this->pid}", "javascript"};
+        String[] interestedKeyWords = {"https://sina.cn/", "https://edu.sina.cn/", "https://finance.sina.cn/", "https://emil.sina.cn/", "https://tech.sina.cn/", "https://nba.sina.cn/", "https://auto.sina.cn/", "https://edu.sina.cn/"};
+        return StringUtils.indexOfAny(link, ignoreKeyWords) == -1 && StringUtils.containsAny(link, interestedKeyWords);
+    }
 }
