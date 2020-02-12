@@ -58,12 +58,12 @@ public class Crawler {
         try (CloseableHttpResponse response1 = httpclient.execute(httpGet)) {
             HttpEntity entity1 = response1.getEntity();
             String html = EntityUtils.toString(entity1);
-            prseHtml(html, linkPool);
+            parseHtml(html, linkPool);
             EntityUtils.consume(entity1);
         }
     }
 
-    private void prseHtml(String html, List<String> linkPool) {
+    private void parseHtml(String html, List<String> linkPool) {
         Document doc = Jsoup.parse(html);
         ArrayList<Element> aTags = doc.select("article");
         if (!aTags.isEmpty()) {
