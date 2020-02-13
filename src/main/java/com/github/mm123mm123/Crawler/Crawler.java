@@ -11,33 +11,32 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
+import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
 public class Crawler {
-    public void crawler() throws IOException {
-        List<String> linkPool = new ArrayList<>();
-        Set<String> processedLinkPool = new HashSet<>();
-        linkPool.add("https://sina.cn/");
-        while (!linkPool.isEmpty()) {
-            String link = linkPool.remove(linkPool.size() - 1);
+    public Crawler() throws SQLException {
+    }
+
+    Database database = new Database();
+
+    public void crawler() throws IOException, SQLException {
+        String link;
+        while ((link = database.linkPoolIsEmpty()) != null) {
+            database.runSQL(link, "DELETE FROM LINK_POOL WHERE LINK=?");
             link = InterceptCoreURL(link);
-            if (processedLinkPool.contains(link)) {
+            if (database.linkIsProcessed(link)) {
                 continue;
             }
-            processedLinkPool.add(link);
+            database.runSQL(link, "INSERT INTO PROCESSED_LINK_POOL (LINK) VALUES (?)");
             if (filterLinksConditions(link)) {
                 if (link.startsWith("//")) {
                     link = "https:" + link;
                 }
                 System.out.println(link);
-                httpGetAndParse(linkPool, link);
-            } else {
-                continue;
+                httpGetAndParse(link);
             }
         }
     }
@@ -50,32 +49,33 @@ public class Crawler {
         return link;
     }
 
-    private void httpGetAndParse(List<String> linkPool, String link) throws IOException {
+    private void httpGetAndParse(String link) throws IOException, SQLException {
         CloseableHttpClient httpclient = HttpClients.createDefault();
         HttpGet httpGet = new HttpGet(link);
         httpGet.addHeader("User_Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36");
-
         try (CloseableHttpResponse response1 = httpclient.execute(httpGet)) {
             HttpEntity entity1 = response1.getEntity();
             String html = EntityUtils.toString(entity1);
-            parseHtml(html, linkPool);
+            parseHtml(html, link);
             EntityUtils.consume(entity1);
         }
     }
 
-    private void parseHtml(String html, List<String> linkPool) {
+    private void parseHtml(String html, String link) throws SQLException {
         Document doc = Jsoup.parse(html);
         ArrayList<Element> aTags = doc.select("article");
         if (!aTags.isEmpty()) {
             for (Element aTag : aTags) {
                 String title = aTag.select("h1").text();
                 System.out.println(title);
+                String content = doc.select("p").text();
+                database.storeDataToDatabase(title, content, link);
             }
         }
         ArrayList<Element> tags = doc.select("a");
         for (Element taga : tags) {
             String newlink = taga.attr("href");
-            linkPool.add(newlink);
+            database.runSQL(newlink, "INSERT INTO LINK_POOL (LINK) VALUES (?)");
         }
     }
 
