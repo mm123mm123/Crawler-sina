@@ -13,9 +13,6 @@ import org.jsoup.nodes.Element;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -26,38 +23,14 @@ public class Crawler {
     }
 
     public void crawler() throws IOException, SQLException {
-        String link = null;
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-        while (true) {
-            try {
-                statement = connection.prepareStatement("SELECT LINK FROM LINK_POOL");
-                resultSet = statement.executeQuery();
-                if (resultSet.next()) {
-                    link = resultSet.getString(1);
-                    statement = connection.prepareStatement("DELETE FROM LINK_POOL WHERE LINK=?");
-                    statement.setString(1, link);
-                    int ignored = statement.executeUpdate();
-                    link = InterceptCoreURL(link);
-                    statement = connection.prepareStatement("SELECT LINK FROM LINK_POOL WHERE LINK LIKE ?");
-                    String sqlLink = "%" + link + "%";
-                    statement.setString(1, sqlLink);
-                    resultSet = statement.executeQuery();
-                    if (resultSet.next()) {
-                        continue;
-                    }
-                    statement = connection.prepareStatement("INSERT INTO PROCESSED_LINK_POOL (LINK) VALUES (?)");
-                    statement.setString(1, link);
-                    int ignored1 = statement.executeUpdate();
-                }
-            } finally {
-                if (statement != null) {
-                    statement.close();
-                }
-                if (resultSet != null) {
-                    resultSet.close();
-                }
+        String link;
+        while ((link = linkPoolIsEmpty()) != null) {
+            runSQL(link, "DELETE FROM LINK_POOL WHERE LINK=?");
+            link = InterceptCoreURL(link);
+            if (linkIsProcessed(link)) {
+                continue;
             }
+            runSQL(link, "INSERT INTO PROCESSED_LINK_POOL (LINK) VALUES (?)");
             if (filterLinksConditions(link)) {
                 if (link.startsWith("//")) {
                     link = "https:" + link;
@@ -66,6 +39,41 @@ public class Crawler {
                 httpGetAndParse(link);
             }
         }
+    }
+
+    private void runSQL(String link, String sql) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, link);
+            int ignored = statement.executeUpdate();
+        }
+    }
+
+    private boolean linkIsProcessed(String link) throws SQLException {
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = connection.prepareStatement("SELECT LINK FROM PROCESSED_LINK_POOL WHERE LINK = ?");
+            statement.setString(1, link);
+            resultSet = statement.executeQuery();
+            return resultSet.next();
+        } finally {
+            if (statement != null) {
+                statement.close();
+            }
+            if (resultSet != null) {
+                resultSet.close();
+            }
+        }
+    }
+
+    private String linkPoolIsEmpty() throws SQLException {
+        String link = null;
+        try (PreparedStatement statement = connection.prepareStatement("SELECT LINK FROM LINK_POOL"); ResultSet resultSet = statement.executeQuery()) {
+            if (resultSet.next()) {
+                link = resultSet.getString(1);
+            }
+        }
+        return link;
     }
 
     private String InterceptCoreURL(String link) {
@@ -83,27 +91,35 @@ public class Crawler {
         try (CloseableHttpResponse response1 = httpclient.execute(httpGet)) {
             HttpEntity entity1 = response1.getEntity();
             String html = EntityUtils.toString(entity1);
-            parseHtml(html);
+            parseHtml(html, link);
             EntityUtils.consume(entity1);
         }
     }
 
-    private void parseHtml(String html) throws SQLException {
+    private void parseHtml(String html, String link) throws SQLException {
         Document doc = Jsoup.parse(html);
         ArrayList<Element> aTags = doc.select("article");
         if (!aTags.isEmpty()) {
             for (Element aTag : aTags) {
                 String title = aTag.select("h1").text();
                 System.out.println(title);
+                String content = doc.select("p").text();
+                storeDataToDatabase(title, content, link);
             }
         }
         ArrayList<Element> tags = doc.select("a");
         for (Element taga : tags) {
             String newlink = taga.attr("href");
-            try (PreparedStatement statement = connection.prepareStatement("INSERT INTO LINK_POOL (LINK) VALUES (?)")) {
-                statement.setString(1, newlink);
-                int ignored = statement.executeUpdate();
-            }
+            runSQL(newlink, "INSERT INTO LINK_POOL (LINK) VALUES (?)");
+        }
+    }
+
+    private void storeDataToDatabase(String title, String content, String link) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO NEWS (TITLE,CONTENT,URL,CREATED_AT,MODIFIED_AT) VALUES(?,?,?,NOW(),NOW())")) {
+            statement.setString(1, title);
+            statement.setString(2, content);
+            statement.setString(3, link);
+            int ignored = statement.executeUpdate();
         }
     }
 
