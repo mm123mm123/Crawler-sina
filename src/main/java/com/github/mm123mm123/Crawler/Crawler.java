@@ -17,20 +17,20 @@ import java.util.ArrayList;
 import org.apache.commons.lang3.StringUtils;
 
 public class Crawler {
-    Connection connection = DriverManager.getConnection("jdbc:h2:file:E:/IdeaProjects/31/Crawler-sina/news", "mm123mm123", "mm123mm123");
-
     public Crawler() throws SQLException {
     }
 
+    Database database = new Database();
+
     public void crawler() throws IOException, SQLException {
         String link;
-        while ((link = linkPoolIsEmpty()) != null) {
-            runSQL(link, "DELETE FROM LINK_POOL WHERE LINK=?");
+        while ((link = database.linkPoolIsEmpty()) != null) {
+            database.runSQL(link, "DELETE FROM LINK_POOL WHERE LINK=?");
             link = InterceptCoreURL(link);
-            if (linkIsProcessed(link)) {
+            if (database.linkIsProcessed(link)) {
                 continue;
             }
-            runSQL(link, "INSERT INTO PROCESSED_LINK_POOL (LINK) VALUES (?)");
+            database.runSQL(link, "INSERT INTO PROCESSED_LINK_POOL (LINK) VALUES (?)");
             if (filterLinksConditions(link)) {
                 if (link.startsWith("//")) {
                     link = "https:" + link;
@@ -39,41 +39,6 @@ public class Crawler {
                 httpGetAndParse(link);
             }
         }
-    }
-
-    private void runSQL(String link, String sql) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, link);
-            int ignored = statement.executeUpdate();
-        }
-    }
-
-    private boolean linkIsProcessed(String link) throws SQLException {
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-        try {
-            statement = connection.prepareStatement("SELECT LINK FROM PROCESSED_LINK_POOL WHERE LINK = ?");
-            statement.setString(1, link);
-            resultSet = statement.executeQuery();
-            return resultSet.next();
-        } finally {
-            if (statement != null) {
-                statement.close();
-            }
-            if (resultSet != null) {
-                resultSet.close();
-            }
-        }
-    }
-
-    private String linkPoolIsEmpty() throws SQLException {
-        String link = null;
-        try (PreparedStatement statement = connection.prepareStatement("SELECT LINK FROM LINK_POOL"); ResultSet resultSet = statement.executeQuery()) {
-            if (resultSet.next()) {
-                link = resultSet.getString(1);
-            }
-        }
-        return link;
     }
 
     private String InterceptCoreURL(String link) {
@@ -104,22 +69,13 @@ public class Crawler {
                 String title = aTag.select("h1").text();
                 System.out.println(title);
                 String content = doc.select("p").text();
-                storeDataToDatabase(title, content, link);
+                database.storeDataToDatabase(title, content, link);
             }
         }
         ArrayList<Element> tags = doc.select("a");
         for (Element taga : tags) {
             String newlink = taga.attr("href");
-            runSQL(newlink, "INSERT INTO LINK_POOL (LINK) VALUES (?)");
-        }
-    }
-
-    private void storeDataToDatabase(String title, String content, String link) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO NEWS (TITLE,CONTENT,URL,CREATED_AT,MODIFIED_AT) VALUES(?,?,?,NOW(),NOW())")) {
-            statement.setString(1, title);
-            statement.setString(2, content);
-            statement.setString(3, link);
-            int ignored = statement.executeUpdate();
+            database.runSQL(newlink, "INSERT INTO LINK_POOL (LINK) VALUES (?)");
         }
     }
 
