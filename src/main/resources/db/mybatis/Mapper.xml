@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="db.mybatis.Mapper.xml">
+    <select id="selectLink" resultType="String">
+        SELECT LINK
+        FROM LINK_POOL
+        LIMIT 1
+    </select>
+    <delete id="deleteLink" parameterType="String">
+        DELETE
+        FROM LINK_POOL
+        WHERE LINK = #{link}
+    </delete>
+    <select id="selectProcessedLink" resultType="String" parameterType="String">
+        SELECT LINK
+        FROM PROCESSED_LINK_POOL
+        WHERE LINK = #{link}
+    </select>
+    <insert id="insertNews" parameterType="String">
+        INSERT INTO NEWS (TITLE, CONTENT, URL, CREATED_AT, MODIFIED_AT)
+        VALUES (#{title}, #{content}, #{link}, NOW(), NOW())
+    </insert>
+    <insert id="insertLink" parameterType="HashMap">
+        INSERT INTO
+        <choose>
+            <when test="tableName=='LINK_POOL'">
+                LINK_POOL
+            </when>
+            <otherwise>
+                PROCESSED_LINK_POOL
+            </otherwise>
+        </choose>
+        VALUES (#{link})
+    </insert>
+</mapper>

@@ -52,11 +52,15 @@
             <artifactId>h2</artifactId>
             <version>1.4.200</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.github.spotbugs/spotbugs-annotations -->
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
             <version>3.1.12</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.5.4</version>
         </dependency>
     </dependencies>
 
@@ -112,6 +116,23 @@
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs</artifactId>
                         <version>4.0.0-RC3</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>6.2.3</version>
+                <configuration>
+                    <url>jdbc:h2:file:E:/IdeaProjects/31/Crawler-sina/news</url>
+                    <user>mm123mm123</user>
+                    <password>mm123mm123</password>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.h2database</groupId>
+                        <artifactId>h2</artifactId>
+                        <version>1.4.200</version>
                     </dependency>
                 </dependencies>
             </plugin>
