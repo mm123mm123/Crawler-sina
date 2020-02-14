@@ -17,29 +17,27 @@ import java.util.ArrayList;
 import org.apache.commons.lang3.StringUtils;
 
 public class Crawler {
-    public Crawler() throws SQLException {
+    public Crawler() throws SQLException, IOException {
     }
 
-    Database database = new Database();
+    Mybatis database = new Mybatis();
 
     public void crawler() throws IOException, SQLException {
         String link;
-        while ((link = database.linkPoolIsEmpty()) != null) {
-            database.runSQL(link, "DELETE FROM LINK_POOL WHERE LINK=?");
+        while ((link = database.getLinkAndDelete()) != null) {
             link = InterceptCoreURL(link);
-            if (database.linkIsProcessed(link)) {
-                continue;
-            }
-            database.runSQL(link, "INSERT INTO PROCESSED_LINK_POOL (LINK) VALUES (?)");
-            if (filterLinksConditions(link)) {
-                if (link.startsWith("//")) {
-                    link = "https:" + link;
+            if (!database.linkIsProcessedAndInsert(link)) {
+                if (filterLinksConditions(link)) {
+                    if (link.startsWith("//")) {
+                        link = "https:" + link;
+                    }
+                    System.out.println(link);
+                    httpGetAndParse(link);
                 }
-                System.out.println(link);
-                httpGetAndParse(link);
             }
         }
     }
+
 
     private String InterceptCoreURL(String link) {
         //将“.d.html?”之后的字符去掉，可以避免重复的新闻
@@ -69,18 +67,25 @@ public class Crawler {
                 String title = aTag.select("h1").text();
                 System.out.println(title);
                 String content = doc.select("p").text();
-                database.storeDataToDatabase(title, content, link);
+                database.storeNewsToDatabase(title, content, link);
             }
         }
+
         ArrayList<Element> tags = doc.select("a");
         for (Element taga : tags) {
-            String newlink = taga.attr("href");
-            database.runSQL(newlink, "INSERT INTO LINK_POOL (LINK) VALUES (?)");
+            String newLink = taga.attr("href");
+            database.storeNewLinkToDatabase(newLink);
         }
     }
+
 
     private boolean filterLinksConditions(String link) {
         String[] interestedKeyWords = {"https://sina.cn/", "https://edu.sina.cn/", "https://finance.sina.cn/", "https://emil.sina.cn/", "https://tech.sina.cn/", "https://nba.sina.cn/", "https://edu.sina.cn/"};
         return StringUtils.containsAny(link, interestedKeyWords);
+    }
+
+    public static void main(String[] args) throws IOException, SQLException {
+        Crawler crawler = new Crawler();
+        crawler.crawler();
     }
 }
