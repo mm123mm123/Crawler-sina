@@ -72,8 +72,8 @@ public class Crawler {
         }
 
         ArrayList<Element> tags = doc.select("a");
-        for (Element taga : tags) {
-            String newLink = taga.attr("href");
+        for (Element tag : tags) {
+            String newLink = tag.attr("href");
             database.storeNewLinkToDatabase(newLink);
         }
     }
