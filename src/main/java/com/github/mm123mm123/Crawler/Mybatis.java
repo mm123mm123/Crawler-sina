@@ -15,7 +15,6 @@ public class Mybatis implements CrawlerDAO {
     InputStream inputStream = Resources.getResourceAsStream(resource);
     SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream);
     boolean autoCommit = true;
-    HashMap<String, String> conditionMap = new HashMap<>();
 
     public Mybatis() throws IOException {
     }
@@ -33,7 +32,8 @@ public class Mybatis implements CrawlerDAO {
     }
 
     @Override
-    public boolean linkIsProcessedAndInsert(String link) throws SQLException {
+    public synchronized boolean linkIsProcessedAndInsert(String link) {
+        HashMap<String, String> conditionMap = new HashMap<>();
         conditionMap.put("tableName", "PROCESSED_LINK_POOL");
         conditionMap.put("link", link);
         try (SqlSession session = sqlSessionFactory.openSession(autoCommit)) {
@@ -55,6 +55,7 @@ public class Mybatis implements CrawlerDAO {
 
     @Override
     public void storeNewLinkToDatabase(String newLink) throws SQLException {
+        HashMap<String, String> conditionMap = new HashMap<>();
         conditionMap.put("tableName", "LINK_POOL");
         conditionMap.put("link", newLink);
         try (SqlSession session = sqlSessionFactory.openSession(autoCommit)) {

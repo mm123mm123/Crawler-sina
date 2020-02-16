@@ -16,25 +16,32 @@ import java.util.ArrayList;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class Crawler {
-    public Crawler() throws SQLException, IOException {
+public class Crawler extends Thread {
+    Mybatis database;
+
+    public Crawler(Mybatis database) throws IOException {
+        this.database = database;
     }
 
-    Mybatis database = new Mybatis();
-
-    public void crawler() throws IOException, SQLException {
-        String link;
-        while ((link = database.getLinkAndDelete()) != null) {
-            link = InterceptCoreURL(link);
-            if (!database.linkIsProcessedAndInsert(link)) {
-                if (filterLinksConditions(link)) {
-                    if (link.startsWith("//")) {
-                        link = "https:" + link;
+    @Override
+    public void run() {
+        try {
+            String link;
+            while ((link = database.getLinkAndDelete()) != null) {
+                link = InterceptCoreURL(link);
+                if (!database.linkIsProcessedAndInsert(link)) {
+                    if (filterLinksConditions(link)) {
+                        if (link.startsWith("//")) {
+                            link = "https:" + link;
+                        }
+                        System.out.println(link);
+                        httpGetAndParse(link);
                     }
-                    System.out.println(link);
-                    httpGetAndParse(link);
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -82,10 +89,5 @@ public class Crawler {
     private boolean filterLinksConditions(String link) {
         String[] interestedKeyWords = {"https://sina.cn/", "https://edu.sina.cn/", "https://finance.sina.cn/", "https://emil.sina.cn/", "https://tech.sina.cn/", "https://nba.sina.cn/", "https://edu.sina.cn/"};
         return StringUtils.containsAny(link, interestedKeyWords);
-    }
-
-    public static void main(String[] args) throws IOException, SQLException {
-        Crawler crawler = new Crawler();
-        crawler.crawler();
     }
 }
