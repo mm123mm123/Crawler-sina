@@ -4,6 +4,27 @@ public class News {
     String title;
     String content;
     String link;
+    String created_at;
+    String modified_at;
+
+
+    public String getCreated_at() {
+        return created_at;
+    }
+
+    public void setCreated_at(String created_at) {
+        this.created_at = created_at;
+    }
+
+    public String getModified_at() {
+        return modified_at;
+    }
+
+    public void setModified_at(String modified_at) {
+        this.modified_at = modified_at;
+    }
+
+
 
     public String getTitle() {
         return title;
@@ -37,5 +58,6 @@ public class News {
         this.link=link;
     }
 
-
+    public News() {
+    }
 }

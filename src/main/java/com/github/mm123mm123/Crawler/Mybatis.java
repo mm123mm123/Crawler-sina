@@ -8,7 +8,6 @@ import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
-import java.util.HashMap;
 
 public class Mybatis implements CrawlerDAO {
     String resource = "db/mybatis/config.xml";
@@ -33,12 +32,9 @@ public class Mybatis implements CrawlerDAO {
 
     @Override
     public synchronized boolean linkIsProcessedAndInsert(String link) {
-        HashMap<String, String> conditionMap = new HashMap<>();
-        conditionMap.put("tableName", "PROCESSED_LINK_POOL");
-        conditionMap.put("link", link);
         try (SqlSession session = sqlSessionFactory.openSession(autoCommit)) {
             if (session.selectOne("db.mybatis.Mapper.xml.selectProcessedLink", link) == null) {
-                session.insert("db.mybatis.Mapper.xml.insertLink", conditionMap);
+                session.insert("db.mybatis.Mapper.xml.insertLink", link);
                 return false;
             } else {
                 return true;
@@ -55,11 +51,8 @@ public class Mybatis implements CrawlerDAO {
 
     @Override
     public void storeNewLinkToDatabase(String newLink) throws SQLException {
-        HashMap<String, String> conditionMap = new HashMap<>();
-        conditionMap.put("tableName", "LINK_POOL");
-        conditionMap.put("link", newLink);
         try (SqlSession session = sqlSessionFactory.openSession(autoCommit)) {
-            session.insert("db.mybatis.Mapper.xml.insertLink", conditionMap);
+            session.insert("db.mybatis.Mapper.xml.insertNewLink", newLink);
         }
     }
 }

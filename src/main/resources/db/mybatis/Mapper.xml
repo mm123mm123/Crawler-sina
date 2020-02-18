@@ -19,19 +19,15 @@
         WHERE LINK = #{link}
     </select>
     <insert id="insertNews" parameterType="String">
-        INSERT INTO NEWS (TITLE, CONTENT, URL, CREATED_AT, MODIFIED_AT)
+        INSERT INTO NEWS (TITLE, CONTENT, LINK, CREATED_AT, MODIFIED_AT)
         VALUES (#{title}, #{content}, #{link}, NOW(), NOW())
     </insert>
-    <insert id="insertLink" parameterType="HashMap">
-        INSERT INTO
-        <choose>
-            <when test="tableName=='LINK_POOL'">
-                LINK_POOL
-            </when>
-            <otherwise>
-                PROCESSED_LINK_POOL
-            </otherwise>
-        </choose>
+    <insert id="insertLink" parameterType="String">
+        INSERT INTO PROCESSED_LINK_POOL
+        VALUES (#{link})
+    </insert>
+    <insert id="insertNewLink" parameterType="String">
+        INSERT INTO LINK_POOL
         VALUES (#{link})
     </insert>
 </mapper>
